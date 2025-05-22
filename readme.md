@@ -1,4 +1,4 @@
-# Mapping the Increasing Use of LLMs in Scientific Papers
+# The Widespread Adoption of Large Language Model-Assisted Writing Across Society
 
 [![Python](https://img.shields.io/badge/python-3.8.19-blue?style=for-the-badge)](https://www.python.org)
 [![License](https://img.shields.io/github/license/TRI-ML/prismatic-vlms?style=for-the-badge)](LICENSE)
@@ -24,8 +24,8 @@ repository was developed and has been thoroughly tested with pandas 2.0.3, numpy
 You can install this package locally via an editable installation or the provided yml file (the installation via yml file should be completed in 1-2 minutes):
 
 ```bash
-git clone https://github.com/Weixin-Liang/Mapping-the-Increasing-Use-of-LLMs-in-Scientific-Papers.git
-cd Mapping-the-Increasing-Use-of-LLMs-in-Scientific-Papers
+git clone https://github.com/Weixin-Liang/LLM-widespread-adoption-impact.git
+cd LLM-widespread-adoption-impact
 conda env create -f environment.yml
 ```
 
@@ -33,22 +33,23 @@ If you run into any problems during the installation process, please file a GitH
 
 ## Demo
 
-Once installed, estimating distributions and running inference is easy. We provide pre-mixed human written text and AI generated text in the data/validation folder for demo purposes, with alpha indicating the fraction of ai-generated text. For each inference call, the expected run time should be 1-2 minutes and the expected output should not deviate from the ground truth by more than 3%.
+Once installed, estimating distributions and running inference is easy. We provide our test data on PR Newswire in the data/test_data/prnewswire folder for demo purposes, with filenames following the {year}_{month} format. For each inference call, the expected run time should be 1-2 minutes.
 
 ```python
 from src.estimation import estimate_text_distribution
 from src.MLE import MLE
 
 # call function estimate_text_distribution to get the AI content distribution & human content distribution
-estimate_text_distribution(f"data/training_data/CS/human_data.parquet",f"data/training_data/CS/ai_data.parquet",f"distribution/CS.parquet")
-# load the word occurrences frequency into our framework
-model=MLE(f"distribution/CS.parquet")
-# validate our method using mixed corpus with known ground truth alpha
-for alpha in [0,0.025,0.05,0.075,0.1,0.125,0.15,0.175,0.2,0.225,0.25]:
-    estimated,ci=model.inference(f"data/validation_data/CS/ground_truth_alpha_{alpha}.parquet")
-    error=abs(estimated-alpha)
-    print(f"{'Ground Truth':>10},{'Prediction':>10},{'CI':>10},{'Error':>10}")
-    print(f"{alpha:10.3f},{estimated:10.3f},{ci:10.3f},{error:10.3f}")
+estimate_text_distribution(f"data/training_data/prnewswire/human_data.parquet",f"data/training_data/prnewswire/ai_data.parquet",f"distribution/prnewswire.parquet")
+# load the framework
+model=MLE(f"distribution/prnewswire.parquet")
+# iterate over the time
+for year in range(2022,2025):
+    for month in range(1,13):
+        if os.path.exists(f"data/test_data/prnewswire/{year}_{month}.parquet"):
+            estimated,ci=model.inference(f"data/test_data/prnewswire/{year}_{month}.parquet")
+            print(f"{'Prediction':>10},{'CI':>10}")
+            print(f"{estimated:10.3f},{ci:10.3f}")
 ```
 
 For a complete demonstration, check out [demo.ipynb](demo.ipynb).
@@ -56,7 +57,7 @@ For a complete demonstration, check out [demo.ipynb](demo.ipynb).
 
 ## Usage
 
-This repository includes the *arXiv* abstracts used for the analysis in our paper. However, our framework can easily be extended to other domains of your choice. It requires two datasets--one consisting of documents written entirely by humans, and another consisting of documents written entirely by AI--which are used to estimate the distribution of human- and AI-generated text in your chosen domain. Using these estimates, you can perform inference on a target dataset with an unknown fraction of AI-generated content.
+This repository includes the *PR Newswire* press release used for the analysis in our paper. It requires two datasets--one consisting of documents written entirely by humans, and another consisting of documents written entirely by AI--which are used to estimate the distribution of human- and AI-generated text in your chosen domain. Using these estimates, you can perform inference on a target dataset with an unknown fraction of AI-generated content. For other data, please check the Data Availability section in our [paper](https://arxiv.org/pdf/2502.09747).
 
 The function **estimate_text_distribution** in src.estimation requires two file path as input to indicate where human- and AI-generated text are stored. The two input files should be .parquet format. For human-generated text, our provided function need the input parquet file to have a column named as human_sentence and required data to be organized as one tokenized sentence(a list of word) per row. Similarly, for ai-generated text, our provided function need a column named as ai_sentence and required data to be organized as one tokenized sentence(a list of word) per row.
 
@@ -87,12 +88,12 @@ Note that we provide our tokenize function in tokenize_demo.ipynb for reference.
 
 Below is a high-level overview of the repository/project file-tree:
 
-+ `data/` - Data source consisting of *arXiv* abstract data across five main fields (Physics, Mathematics, Computer Science, Statistics, and Electrical Engineering and Systems Science). The `training_data` folder contains corpora known to be entirely AI-generated or human-written, which are used for distribution estimation. The `validation_data` folder contains corpora with mixed AI-generated and human-written data, whose ground truth portion is known. This is used to validate the effectiveness of our framework. Details on the data can be found in our [paper](https://arxiv.org/abs/2404.01268).
++ `data/` - Data source consisting of *PR Newswire* data. The `training_data` folder contains corpora known to be entirely AI-generated or human-written, which are used for distribution estimation. Details on the data can be found in our [paper](https://arxiv.org/pdf/2502.09747).
 + `distribution/` - Folder to save the distribution parquet generated by the `estimate_text_distribution` function for demo purposes.
 + `src/` - Package source providing core utilities for distribution estimation, framework loading, data inference, etc.
 + `LICENSE` - All code is made available under the MIT License; happy hacking!
-+ `demo.ipynb` - Demonstration of our framework on *arXiv* abstracts across five main fields. This includes estimating the distributions of human- and AI-generated content, followed by a validation process on manually mixed data with a known ground truth portion of AI-written text.
-+ `tokenize_demo.ipynb` - Demonstration of how we tokenize *arXiv* abstracts, including the tokenize function. Here we use the spaCy(https://spacy.io/) library, but other tools like nltk are also feasible. You may need to modify the function in your own cases.
++ `demo.ipynb` - Demonstration of our framework on *PR Newswire* data. This includes estimating the distributions of human- and AI-generated content, followed by a test process on estimating the LLM usage across time.
++ `tokenize_demo.ipynb` - Demonstration of how we tokenize *PR Newswire*, including the tokenize function. Here we use the spaCy(https://spacy.io/) library, but other tools like nltk are also feasible. You may need to modify the function in your own cases.
 + `environment.yml` - Full project configuration details (including dependencies), as well as tool configurations.
 + `README.md` - You are here!
 ---

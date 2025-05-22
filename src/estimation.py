@@ -139,10 +139,16 @@ def estimate_text_distribution(human_source_path, ai_source_path,save_file_path=
     if 'ai_sentence' not in ai_data.columns:
         raise ValueError("ai_sentence column not found in ai data")
 
+    human_data = human_data.explode('human_sentence')
+    ai_data = ai_data.explode('ai_sentence')
+    human_data.dropna(subset=['human_sentence'], inplace=True)
+    ai_data.dropna(subset=['ai_sentence'], inplace=True)
+    
+
     # Filter out records where the sentences are too short (length <= 1) and drop any rows
     # where the sentence is missing (NaN values).
-    human_data=human_data[human_data['human_sentence'].apply(len) > 1]
-    ai_data=ai_data[ai_data['ai_sentence'].apply(len) > 1]
+    human_data=human_data[human_data['human_sentence'].apply(len) > 10]
+    ai_data=ai_data[ai_data['ai_sentence'].apply(len) > 10]
     human_data.dropna(subset=['human_sentence'], inplace=True)
     ai_data.dropna(subset=['ai_sentence'], inplace=True)
     
